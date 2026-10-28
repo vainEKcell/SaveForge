@@ -86,6 +86,24 @@ public sealed class FieldNodeVm : INotifyPropertyChanged
     /// <summary>显示名：有游戏数据库别名时显示「ID · 名称」。</summary>
     public string Name => Model.Label;
 
+    /// <summary>
+    /// 界面主标题。优先用中文语义名（金钱、等级、当前 HP），
+    /// 其次是物品别名（樱花鳟），都查不到才退回原始键名。
+    /// </summary>
+    public string DisplayName =>
+        Model.Alias is not null
+            ? Model.Alias
+            : FieldDictionary.DescribeName(Model.Name);
+
+    /// <summary>副标题：显示原始键名，让用户知道真实字段。没有可翻译项时为 null。</summary>
+    public string? RawKey =>
+        Model.Alias is not null
+            ? Model.Name
+            : FieldDictionary.TryDescribe(Model.Name, out _, out _) ? Model.Name : null;
+
+    /// <summary>字段含义说明（详情面板用）。</summary>
+    public string? FieldHint => FieldDictionary.DescribeHint(Model.Name);
+
     public string KindLabel => Model.Kind switch
     {
         ValueKind.Object => "对象",

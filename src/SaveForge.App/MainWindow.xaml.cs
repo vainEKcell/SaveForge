@@ -82,6 +82,7 @@ public partial class MainWindow : Window
             RebuildTree();
             UpdateHeader();
             UpdateStatus();
+            BuildOverview();
             ShowEmptyDetail();
         }
         catch (Exception ex)
@@ -447,7 +448,16 @@ public partial class MainWindow : Window
         DetailScroll.Visibility = Visibility.Visible;
         EmptyHint.Visibility = Visibility.Collapsed;
 
-        TxtFieldName.Text = _selected.Name;
+        TxtFieldName.Text = _selected.DisplayName;
+
+        string? hint = _selected.FieldHint;
+        TxtFieldHint.Text = hint ?? string.Empty;
+        TxtFieldHint.Visibility = hint is null ? Visibility.Collapsed : Visibility.Visible;
+
+        string? rawKey = _selected.RawKey;
+        TxtRawKey.Text = rawKey is null ? string.Empty : $"原始字段：{rawKey}";
+        TxtRawKey.Visibility = rawKey is null ? Visibility.Collapsed : Visibility.Visible;
+
         TxtLocator.Text = string.IsNullOrEmpty(_selected.Locator) ? "—" : _selected.Locator;
         UpdateDetailBadge();
 
@@ -571,6 +581,119 @@ public partial class MainWindow : Window
     {
         bool modified = _selected?.IsModified == true;
         BadgeModified.Visibility = modified ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// 构建常用属性概览卡片。
+    /// 只对 RPG Maker 存档显示——它有一套稳定的已知字段；
+    /// 其他引擎没有统一约定，硬猜反而误导用户。
+    /// </summary>
+    private void BuildOverview()
+    {
+        OverviewItems.Children.Clear();
+
+        if (_document is null || !IsRpgMakerSave(_document.FilePath ?? "", _document.FormatId))
+        {
+            OverviewPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var party = FindNode("party");
+        if (party is null)
+        {
+            OverviewPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        OverviewPanel.Visibility = Visibility.Visible;
+
+        AddOverviewCard("💰", "金钱", FormatNumber(FindChild(party, "_gold")), "_gold");
+        AddOverviewCard("👣", "步数", FormatNumber(FindChild(party, "_steps")), "_steps");
+
+        var items = FindChild(party, "_items");
+        if (items is not null)
+            AddOverviewCard("🎒", "物品", $"{items.Children.Count} 种", "_items");
+
+        var actors = FindChild(party, "_actors");
+        if (actors is not null)
+            AddOverviewCard("👥", "队伍", $"{actors.Children.Count} 人", "_actors");
+
+        var system = FindNode("system");
+        var saveCount = FindChild(system, "_saveCount");
+        if (saveCount is not null)
+            AddOverviewCard("💾", "存档次数", FormatNumber(saveCount), "_saveCount");
+    }
+
+    private void AddOverviewCard(string icon, string label, string? value, string searchKey)
+    {
+        if (string.IsNullOrEmpty(value)) return;
+
+        var border = new Border
+        {
+            Background = (Brush)FindResource("Brush.Subtle"),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(10, 5, 10, 5),
+            Margin = new Thickness(0, 0, 6, 6),
+            Cursor = Cursors.Hand,
+            ToolTip = $"点击筛选「{searchKey}」",
+        };
+
+        var content = new StackPanel { Orientation = Orientation.Horizontal };
+        content.Children.Add(new TextBlock
+        {
+            Text = icon,
+            FontSize = 13,
+            Margin = new Thickness(0, 0, 6, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        var text = new StackPanel();
+        text.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 10,
+            Foreground = (Brush)FindResource("Brush.TextMuted"),
+        });
+        text.Children.Add(new TextBlock
+        {
+            Text = value,
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = (Brush)FindResource("Brush.Accent"),
+        });
+
+        content.Children.Add(text);
+        border.Child = content;
+
+        border.MouseLeftButtonUp += (_, _) => TxtSearch.Text = searchKey;
+
+        OverviewItems.Children.Add(border);
+    }
+
+    private SaveNode? FindNode(params string[] path)
+    {
+        if (_document is null || _document.Roots.Count == 0) return null;
+
+        SaveNode? current = _document.Roots[0];
+
+        foreach (string name in path)
+        {
+            current = FindChild(current, name);
+            if (current is null) return null;
+        }
+
+        return current;
+    }
+
+    private static SaveNode? FindChild(SaveNode? parent, string name) =>
+        parent?.Children.FirstOrDefault(c => c.Name == name);
+
+    private static string? FormatNumber(SaveNode? node)
+    {
+        if (node?.Value is null) return null;
+
+        try { return Convert.ToInt64(node.Value).ToString("N0"); }
+        catch { return node.DisplayValue; }
     }
 
     private void ShowEmptyDetail()

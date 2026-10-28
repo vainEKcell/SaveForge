@@ -88,6 +88,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -108,7 +109,13 @@
                                  TextChanged="TxtSearch_TextChanged"/>
                     </Grid>
 
-                    <TreeView x:Name="FieldTree" Grid.Row="1"
+                    <!-- 常用属性概览：让不懂存档结构的用户一眼看到关键数据 -->
+                    <Border x:Name="OverviewPanel" Grid.Row="1" Margin="12,0,12,10"
+                            Visibility="Collapsed">
+                        <WrapPanel x:Name="OverviewItems" Orientation="Horizontal"/>
+                    </Border>
+
+                    <TreeView x:Name="FieldTree" Grid.Row="2"
                               Margin="8,0,8,10"
                               Background="Transparent"
                               BorderThickness="0"
@@ -127,9 +134,28 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBlock Text="{Binding Name}" FontSize="13"
-                                               Foreground="{StaticResource Brush.Text}"
-                                               VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DisplayName}" FontSize="13"
+                                                   Foreground="{StaticResource Brush.Text}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding RawKey}" FontSize="10"
+                                                   Margin="6,1,0,0" Foreground="#9AA3AF"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RawKey}" Value="">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RawKey}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
 
                                     <TextBlock Grid.Column="1" Text="●" FontSize="10" Margin="4,0,0,0"
                                                Foreground="{StaticResource Brush.Modified}"
@@ -185,6 +211,16 @@
                                        Foreground="{StaticResource Brush.Text}"
                                        TextWrapping="Wrap" Margin="0,6,0,0"/>
 
+                            <TextBlock x:Name="TxtFieldHint" FontSize="12"
+                                       Foreground="{StaticResource Brush.TextMuted}"
+                                       TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Visibility="Collapsed"/>
+
+                            <TextBlock x:Name="TxtRawKey" FontSize="11"
+                                       FontFamily="Consolas, Microsoft YaHei UI"
+                                       Foreground="#9AA3AF" TextWrapping="Wrap"
+                                       Margin="0,4,0,0" Visibility="Collapsed"/>
+
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                 <Border Background="{StaticResource Brush.Subtle}" CornerRadius="5" Padding="8,3">
                                     <TextBlock x:Name="TxtFieldKind" FontSize="11"
@@ -225,22 +261,88 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- 空状态 -->
-                    <StackPanel x:Name="EmptyHint" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                Margin="30">
-                        <Border Width="52" Height="52" CornerRadius="26"
-                                Background="{StaticResource Brush.Subtle}"
-                                HorizontalAlignment="Center">
-                            <TextBlock Text="◇" FontSize="24" Foreground="#A8B0BA"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="选中左侧字段查看详情" FontSize="13" Margin="0,14,0,0"
+                    <!-- 空状态：面向完全不了解存档格式的用户 -->
+                    <StackPanel x:Name="EmptyHint" VerticalAlignment="Center"
+                                Margin="28,24,28,24">
+                        <TextBlock Text="三步改存档" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Text}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="不需要懂存档格式，按下面三步操作即可"
+                                   FontSize="11" Margin="0,5,0,18"
                                    Foreground="{StaticResource Brush.TextMuted}"
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Text="也可以直接把存档文件拖进窗口打开"
-                                   FontSize="11" Margin="0,6,0,0"
-                                   Foreground="#9AA3AF" TextAlignment="Center"
-                                   HorizontalAlignment="Center"/>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="20" Height="20" CornerRadius="10"
+                                    Background="{StaticResource Brush.Accent}"
+                                    VerticalAlignment="Top">
+                                <TextBlock Text="1" FontSize="11" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Text="打开存档" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Brush.Text}"/>
+                                <TextBlock Text="点「打开存档」，或把文件直接拖进窗口"
+                                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="20" Height="20" CornerRadius="10"
+                                    Background="{StaticResource Brush.Accent}"
+                                    VerticalAlignment="Top">
+                                <TextBlock Text="2" FontSize="11" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Text="找到要改的项目" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Brush.Text}"/>
+                                <TextBlock Text="左侧列表显示「金钱」「等级」「物品」这类中文名，展开就能看到数值"
+                                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="20" Height="20" CornerRadius="10"
+                                    Background="{StaticResource Brush.Accent}"
+                                    VerticalAlignment="Top">
+                                <TextBlock Text="3" FontSize="11" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Text="改完点保存" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Brush.Text}"/>
+                                <TextBlock Text="右侧输入新的值，点「保存修改」写入；会自动生成 .bak 备份"
+                                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Background="{StaticResource Brush.Subtle}" CornerRadius="6"
+                                Padding="12,8">
+                            <StackPanel>
+                                <TextBlock Text="支持 12 种存档格式" FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource Brush.TextMuted}"/>
+                                <TextBlock Text="JSON · XML · INI · NBT · plist · MessagePack · CBOR&#x0a;Unreal Engine · Ren'Py · RPG Maker（XP/VX/Ace/MV/MZ）"
+                                           FontSize="10" Foreground="#9AA3AF"
+                                           TextWrapping="Wrap" Margin="0,4,0,0" LineHeight="17"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Border>
