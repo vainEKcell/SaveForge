@@ -40,9 +40,10 @@ public sealed class SaveWrapperRegistry
                 if (payload.Length == 0) continue;
                 if (payload.Length > MaxUnpackedBytes) continue;
 
-                // 小文件压缩后可能因头部开销反而更大（Zstd 头 ~13 字节），
-                // 所以不能要求"必须更小"，只设一个宽松上限来拦截解压炸弹。
-                if (payload.Length > data.Length * 8L) continue;
+                // 压缩比上限用于拦截解压炸弹。文本类存档（大量重复键名）压缩比
+                // 达到 10 倍以上很常见，所以这里放得比较宽；真正的炸弹通常是
+                // 上千倍，配合 MaxUnpackedBytes 的绝对上限足够拦住。
+                if (payload.Length > data.Length * 64L) continue;
 
                 return (payload, wrapper);
             }
@@ -66,6 +67,7 @@ public sealed class SaveWrapperRegistry
         var registry = new SaveWrapperRegistry();
 
         // 魔数明确的优先，靠特征猜的放后面
+        registry.Register(new PakoUtf8Wrapper());   // RPG Maker MZ 本地存档
         registry.Register(new GzipWrapper());
         registry.Register(new ZstdWrapper());
         registry.Register(new Lz4Wrapper());

@@ -19,10 +19,14 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   Text="按字段名批量设置值。适合「所有角色等级统一」这类操作。"
-                   FontSize="12" Foreground="{StaticResource Brush.TextMuted}"
-                   TextWrapping="Wrap" Margin="0,0,0,16"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="按字段名批量设置值。适合「所有角色等级统一」这类操作。"
+                       FontSize="12" Foreground="{StaticResource Brush.TextMuted}"
+                       TextWrapping="Wrap"/>
+            <TextBlock x:Name="TxtScope" Text="范围：整个存档"
+                       FontSize="12" Foreground="{StaticResource Brush.Accent}"
+                       TextWrapping="Wrap" Margin="0,6,0,0"/>
+        </StackPanel>
 
         <TextBlock Grid.Row="1" Text="字段名模式"
                    FontSize="12" FontWeight="SemiBold"

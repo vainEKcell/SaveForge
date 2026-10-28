@@ -196,6 +196,17 @@ public sealed class IniFormat : ISaveFormat
 
         if (sample > 0 && zeroCount > sample / 4) return string.Empty;
 
-        return Encoding.UTF8.GetString(data);
+        string text = Encoding.UTF8.GetString(data);
+
+        // 二进制数据被 UTF-8 解码后会产生大量替换字符（U+FFFD）。
+        // 占比过高说明根本不是文本，必须放弃，否则会把压缩流误判成 INI。
+        int badChars = 0;
+        int checkLength = Math.Min(text.Length, 4096);
+        for (int i = 0; i < checkLength; i++)
+            if (text[i] == '\uFFFD') badChars++;
+
+        if (checkLength > 0 && badChars > checkLength * 0.05) return string.Empty;
+
+        return text;
     }
 }

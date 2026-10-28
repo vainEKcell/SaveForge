@@ -30,7 +30,7 @@
                                    Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
                         <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
                                    LineHeight="22" TextWrapping="Wrap"
-                                   Text="• 自动识别存档格式，不依赖扩展名&#x0a;• 树状浏览字段，选中即可编辑&#x0a;• 保存前自动生成 .bak 备份&#x0a;• 两份存档对比，标出新增/删除/修改&#x0a;• 按字段名批量修改（支持 * 和 ? 通配符）&#x0a;• 导出为 JSON 查看，或导入外部编辑的 JSON&#x0a;• 自动解包 GZip / Zstd / LZ4 / BZip2 / Brotli / Base64"/>
+                                   Text="• 自动识别存档格式，不依赖扩展名&#x0a;• 树状浏览字段，选中即可编辑&#x0a;• 保存前自动生成 .bak 备份&#x0a;• 两份存档对比，标出新增/删除/修改&#x0a;• 按字段名批量修改（支持通配符，可限定子树）&#x0a;• RPG Maker 库存自动显示物品名称（读游戏 data/Items.json）&#x0a;• 导出为 JSON 查看，或导入外部编辑的 JSON&#x0a;• 自动解包 GZip / Zstd / LZ4 / BZip2 / Brotli / Base64&#x0a;• 支持 RPG Maker MZ 的 pako + UTF-8 包装存档"/>
                     </StackPanel>
                 </Border>
 

@@ -252,3 +252,75 @@ public sealed class Bzip2Wrapper : ISaveWrapper
         return output.ToArray();
     }
 }
+
+/// <summary>
+/// pako 压缩 + UTF-8 包装（RPG Maker MZ 本地存档的真实格式）。
+///
+/// 成因：游戏的 StorageManager 用 pako.deflate 得到 zlib 字节流，
+/// 但以"二进制字符串"（每字符 0-255）写文件，NW.js 按 UTF-8 编码落盘，
+/// 于是 >=0x80 的字节全部膨胀成两字节（如 0xEC → C3 AC）。
+///
+/// 打开时要反过来：按 UTF-8 解码 → 按 Latin-1 还原字节 → zlib 解压。
+/// 保存时正向再做一遍，保证游戏能正常读取。
+/// </summary>
+public sealed class PakoUtf8Wrapper : ISaveWrapper
+{
+    public string Id => "pako-utf8";
+    public string DisplayName => "pako 压缩（UTF-8 包装）";
+
+    public float Detect(ReadOnlySpan<byte> data, string? fileName)
+    {
+        if (data.Length < 16) return 0f;
+
+        // 必须是合法 UTF-8，且所有字符都落在 0-255 内（Latin-1 可映射）
+        string text;
+        try { text = Encoding.UTF8.GetString(data); }
+        catch { return 0f; }
+
+        if (text.Length == 0) return 0f;
+
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c > 0xFF || c == '\uFFFD') return 0f;
+        }
+
+        // 还原成原始字节后，必须呈现出 zlib 头
+        byte[] raw = Encoding.Latin1.GetBytes(text);
+
+        if (raw.Length < 2) return 0f;
+
+        bool zlibHeader = raw[0] == 0x78 && raw[1] is 0x01 or 0x9C or 0xDA or 0x5E;
+        if (!zlibHeader) return 0f;
+
+        // 扩展名吻合时略微加权
+        bool nameMatch = fileName?.EndsWith(".rmmzsave", StringComparison.OrdinalIgnoreCase) == true
+                      || fileName?.EndsWith(".rpgsave", StringComparison.OrdinalIgnoreCase) == true;
+
+        return nameMatch ? 0.97f : 0.95f;
+    }
+
+    public byte[] Unwrap(byte[] data)
+    {
+        string text = Encoding.UTF8.GetString(data);
+        byte[] raw = Encoding.Latin1.GetBytes(text);
+
+        using var input = new MemoryStream(raw, writable: false);
+        using var zlib = new ZLibStream(input, CompressionMode.Decompress);
+        using var output = new MemoryStream();
+        zlib.CopyTo(output);
+        return output.ToArray();
+    }
+
+    public byte[] Wrap(byte[] payload)
+    {
+        using var output = new MemoryStream();
+
+        using (var zlib = new ZLibStream(output, CompressionLevel.Optimal, leaveOpen: true))
+            zlib.Write(payload, 0, payload.Length);
+
+        // 字节 → Latin-1 字符 → UTF-8，模拟游戏的落盘方式
+        string latin = Encoding.Latin1.GetString(output.ToArray());
+        return Encoding.UTF8.GetBytes(latin);
+    }
+}

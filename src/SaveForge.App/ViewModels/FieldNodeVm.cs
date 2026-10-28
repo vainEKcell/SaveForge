@@ -29,10 +29,14 @@ public sealed class FieldNodeVm : INotifyPropertyChanged
         }
     }
 
-    /// <summary>节点自身或其任一代后代是否命中关键词。</summary>
+    /// <summary>节点自身或其任一代后代是否命中关键词（名称、别名、值都参与匹配）。</summary>
     public static bool Matches(SaveNode node, string keyword)
     {
         if (node.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (node.Alias is not null &&
+            node.Alias.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            return true;
 
         if (!node.IsContainer &&
             node.DisplayValue.Contains(keyword, StringComparison.OrdinalIgnoreCase))
@@ -56,9 +60,11 @@ public sealed class FieldNodeVm : INotifyPropertyChanged
             {
                 if (descendant.IsContainer) continue;
 
-                if (descendant.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                    descendant.DisplayValue.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                    count++;
+                bool hit = descendant.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                        || (descendant.Alias?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
+                        || descendant.DisplayValue.Contains(keyword, StringComparison.OrdinalIgnoreCase);
+
+                if (hit) count++;
             }
         }
 
@@ -77,7 +83,8 @@ public sealed class FieldNodeVm : INotifyPropertyChanged
         }
     }
 
-    public string Name => Model.Name;
+    /// <summary>显示名：有游戏数据库别名时显示「ID · 名称」。</summary>
+    public string Name => Model.Label;
 
     public string KindLabel => Model.Kind switch
     {
@@ -92,7 +99,18 @@ public sealed class FieldNodeVm : INotifyPropertyChanged
         _ => "未知",
     };
 
-    public string ValueText => Model.DisplayValue;
+    /// <summary>树中显示的值。超长文本截断，避免单个字段把界面撑爆。</summary>
+    public string ValueText
+    {
+        get
+        {
+            string value = Model.DisplayValue;
+
+            // 有些游戏把整段 JSON 存成字符串字段，全量显示会拖垮渲染
+            const int limit = 120;
+            return value.Length <= limit ? value : value[..limit] + " …";
+        }
+    }
 
     public bool IsContainer => Model.IsContainer;
 

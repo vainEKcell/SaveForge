@@ -35,27 +35,38 @@ public sealed class SaveFileService
 
         byte[] raw = File.ReadAllBytes(filePath);
 
-        // 先直接识别一次。有些"看起来像 Base64"的文件本身就是最终格式
-        // （例如 RPG Maker MV 的 LZString 输出），不能让压缩层抢先解包。
+        // 决策分两步：
+        //   1. 直接识别原始字节
+        //   2. 尝试剥掉压缩层，再识别一次
+        // 只有当"直接识别"置信度不够高时，才采用解包结果。
+        // 这样既能避免 Base64 层抢走 LZString 这类"看起来像 Base64"的格式，
+        // 也能避免宽松格式（如 INI）把 zlib 二进制误判成文本。
         var (directFormat, directScore) = _registry.Detect(raw, filePath);
 
         byte[] payload = raw;
         ISaveWrapper? wrapper = null;
         ISaveFormat format = directFormat;
+        float bestScore = directScore;
 
-        if (directScore < 0.5f)
+        if (directScore < 0.85f)
         {
             var (unwrapped, detectedWrapper) = _wrappers.Unwrap(raw, filePath);
 
             if (detectedWrapper is not null)
             {
-                var (innerFormat, _) = _registry.Detect(unwrapped, filePath);
+                var (innerFormat, innerScore) = _registry.Detect(unwrapped, filePath);
 
-                payload = unwrapped;
-                wrapper = detectedWrapper;
-                format = innerFormat;
+                if (innerScore >= 0.85f)
+                {
+                    payload = unwrapped;
+                    wrapper = detectedWrapper;
+                    format = innerFormat;
+                    bestScore = innerScore;
+                }
             }
         }
+
+        _ = bestScore;
 
         SaveDocument document;
         try

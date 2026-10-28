@@ -10,8 +10,8 @@ namespace SaveForge.Core;
 /// </summary>
 public static class SaveBatchEdit
 {
-    /// <summary>按字段名模式匹配可编辑叶子。</summary>
-    public static IReadOnlyList<SaveNode> Match(SaveDocument document, string pattern)
+    /// <summary>按字段名模式匹配可编辑叶子。scope 非空时只在该节点的子树内查找。</summary>
+    public static IReadOnlyList<SaveNode> Match(SaveDocument document, string pattern, SaveNode? scope = null)
     {
         var result = new List<SaveNode>();
 
@@ -27,13 +27,14 @@ public static class SaveBatchEdit
             return result;
         }
 
-        foreach (var root in document.Roots)
+        IEnumerable<SaveNode> candidates = scope is not null
+            ? scope.Descendants()
+            : document.Roots.SelectMany(root => root.Descendants());
+
+        foreach (var node in candidates)
         {
-            foreach (var node in root.Descendants())
-            {
-                if (node.IsContainer || !node.IsEditable) continue;
-                if (regex.IsMatch(node.Name)) result.Add(node);
-            }
+            if (node.IsContainer || !node.IsEditable) continue;
+            if (regex.IsMatch(node.Name)) result.Add(node);
         }
 
         return result;

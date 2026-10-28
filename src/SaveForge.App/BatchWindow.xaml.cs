@@ -9,14 +9,25 @@ namespace SaveForge.App;
 public partial class BatchWindow : Window
 {
     private readonly SaveDocument _document;
+    private readonly SaveNode? _scope;
 
     /// <summary>实际修改的字段数量（应用成功后有效）。</summary>
     public int AppliedCount { get; private set; }
 
-    public BatchWindow(SaveDocument document)
+    public BatchWindow(SaveDocument document, SaveNode? scope = null)
     {
         InitializeComponent();
         _document = document;
+        _scope = scope;
+
+        if (_scope is not null)
+        {
+            TxtScope.Text = $"范围：{_scope.Name} 子树（{_scope.Descendants().Count()} 个节点），仅匹配其中的字段";
+        }
+        else
+        {
+            TxtScope.Text = "范围：整个存档";
+        }
     }
 
     private void Input_Changed(object sender, RoutedEventArgs e) => UpdatePreview();
@@ -33,7 +44,7 @@ public partial class BatchWindow : Window
             return;
         }
 
-        var matches = SaveBatchEdit.Match(_document, pattern);
+        var matches = SaveBatchEdit.Match(_document, pattern, _scope);
 
         if (matches.Count == 0)
         {
@@ -61,7 +72,7 @@ public partial class BatchWindow : Window
 
     private void BtnApply_Click(object sender, RoutedEventArgs e)
     {
-        var matches = SaveBatchEdit.Match(_document, TxtPattern.Text.Trim());
+        var matches = SaveBatchEdit.Match(_document, TxtPattern.Text.Trim(), _scope);
 
         AppliedCount = SaveBatchEdit.Apply(matches, TxtValue.Text);
 

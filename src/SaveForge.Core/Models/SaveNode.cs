@@ -39,6 +39,15 @@ public sealed class SaveNode
     /// <summary>字段名 / JSON 键 / 数组下标显示的文本。</summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 可读别名。仅用于界面展示，不影响回写（回写始终用 Name）。
+    /// 典型用途：RPG Maker 存档里的物品 ID "51" → "樱花鳟"。
+    /// </summary>
+    public string? Alias { get; set; }
+
+    /// <summary>界面展示用的名称：有别名时显示「键 · 别名」。</summary>
+    public string Label => string.IsNullOrWhiteSpace(Alias) ? Name : $"{Name} · {Alias}";
+
     /// <summary>值类型。</summary>
     public ValueKind Kind { get; set; }
 

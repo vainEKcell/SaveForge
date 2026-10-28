@@ -26,6 +26,7 @@ public partial class MainWindow : Window
 
     private SaveDocument? _document;
     private FieldNodeVm? _selected;
+    private GameDatabase? _database;
     private bool _suppressValueChange;
     private bool _suppressSearchChange;
 
@@ -66,6 +67,9 @@ public partial class MainWindow : Window
         {
             _document = _service.Open(path);
             _selected = null;
+
+            // RPG Maker 存档：尝试从游戏目录自动载入数据库，把物品 ID 显示成名称
+            TryAttachGameDatabase(path);
 
             // 换文件时清空搜索条件，避免旧关键词把新文件的字段过滤掉
             if (TxtSearch.Text.Length > 0)
@@ -126,6 +130,63 @@ public partial class MainWindow : Window
         RebuildTree();
 
         if (TxtSearch.Text.Trim().Length == 0) UpdateStatus();
+    }
+
+    private void BtnLoadDatabase_Click(object sender, RoutedEventArgs e)
+    {
+        if (_document is null) return;
+
+        var dialog = new OpenFileDialog
+        {
+            Title = "选择 RPG Maker 数据表",
+            Filter = "RPG Maker 数据表|Items.json;Weapons.json;Armors.json|JSON 文件|*.json|所有文件|*.*",
+            CheckFileExists = true,
+        };
+
+        if (dialog.ShowDialog(this) != true) return;
+
+        try
+        {
+            _database = GameDatabase.LoadFile(dialog.FileName);
+            int mapped = _database.ApplyTo(_document);
+
+            RebuildTree();
+
+            TxtStatus.Text = mapped > 0
+                ? $"已载入 {Path.GetFileName(dialog.FileName)}（{_database.Summary}），识别 {mapped} 个库存条目"
+                : $"已载入数据库（{_database.Summary}），但当前存档里没有匹配的条目";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"载入数据库失败：\n\n{ex.Message}", "SaveForge",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>
+    /// RPG Maker 存档打开后，尝试从游戏目录自动找 data/Items.json 等数据表。
+    /// 找不到时静默跳过，用户可以手动点「物品库」载入。
+    /// </summary>
+    private void TryAttachGameDatabase(string path)
+    {
+        _database = null;
+
+        if (_document is null || !IsRpgMakerSave(path, _document.FormatId)) return;
+
+        _database = GameDatabase.TryAutoLoad(path);
+        if (_database is null) return;
+
+        int mapped = _database.ApplyTo(_document);
+
+        if (mapped > 0)
+            TxtStatus.Text = $"已自动载入游戏数据库（{_database.Summary}），识别 {mapped} 个库存条目";
+    }
+
+    private static bool IsRpgMakerSave(string path, string formatId)
+    {
+        return path.EndsWith(".rmmzsave", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".rpgsave", StringComparison.OrdinalIgnoreCase)
+            || formatId is "rpgmaker" or "rpgmaker-mv";
     }
 
     private void BtnAbout_Click(object sender, RoutedEventArgs e)
@@ -292,7 +353,9 @@ public partial class MainWindow : Window
     {
         if (_document is null) return;
 
-        var window = new BatchWindow(_document) { Owner = this };
+        // 选中容器节点时，把批量修改限制在该子树内
+        SaveNode? scope = _selected?.IsContainer == true ? _selected.Model : null;
+        var window = new BatchWindow(_document, scope) { Owner = this };
 
         if (window.ShowDialog() != true || window.AppliedCount <= 0) return;
 
@@ -465,6 +528,7 @@ public partial class MainWindow : Window
             BtnBatch.IsEnabled = false;
             BtnExportJson.IsEnabled = false;
             BtnImportJson.IsEnabled = false;
+            BtnLoadDatabase.IsEnabled = false;
             return;
         }
 
@@ -482,6 +546,7 @@ public partial class MainWindow : Window
         BtnBatch.IsEnabled = canWrite;
         BtnExportJson.IsEnabled = true;
         BtnImportJson.IsEnabled = canWrite;
+        BtnLoadDatabase.IsEnabled = IsRpgMakerSave(_document.FilePath ?? "", _document.FormatId);
     }
 
     private void UpdateStatus()
@@ -494,7 +559,9 @@ public partial class MainWindow : Window
         }
 
         string mode = _document.IsReadOnly ? " · 只读预览" : string.Empty;
-        TxtStatus.Text = $"{_document.FormatName} · {FormatSize(_document.OriginalBytes.Length)}{mode}";
+        string database = _database is not null ? $" · 物品库 {_database.TotalEntries} 项" : string.Empty;
+
+        TxtStatus.Text = $"{_document.FormatName} · {FormatSize(_document.OriginalBytes.Length)}{mode}{database}";
 
         int modified = _document.ModifiedCount;
         TxtModified.Text = modified > 0 ? $"● 已修改 {modified} 项" : string.Empty;

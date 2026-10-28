@@ -62,8 +62,12 @@
                         <TextBlock x:Name="TxtFormat" Text="—"
                                    FontSize="11" Foreground="{StaticResource Brush.TextMuted}"/>
                     </Border>
+                    <Button x:Name="BtnLoadDatabase" Content="物品库" Style="{StaticResource Btn}"
+                            Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
+                            ToolTip="载入游戏的 Items.json / Weapons.json / Armors.json，把物品 ID 显示成中文名称"
+                            Click="BtnLoadDatabase_Click"/>
                     <Button x:Name="BtnAbout" Content="关于" Style="{StaticResource Btn}"
-                            Padding="10,5" Margin="12,0,0,0" Click="BtnAbout_Click"/>
+                            Padding="10,5" Margin="6,0,0,0" Click="BtnAbout_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
