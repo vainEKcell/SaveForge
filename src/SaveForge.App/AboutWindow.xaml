@@ -1,0 +1,107 @@
+<Window x:Class="SaveForge.App.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="关于 SaveForge"
+        Height="640" Width="640"
+        ResizeMode="CanResize"
+        Background="{StaticResource Brush.Background}"
+        FontFamily="Microsoft YaHei UI, Segoe UI"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="22">
+            <StackPanel>
+
+                <TextBlock Text="SaveForge" FontSize="26" FontWeight="Bold"
+                           Foreground="{StaticResource Brush.Text}"/>
+                <TextBlock x:Name="TxtVersion" Text="版本 —"
+                           FontSize="12" Foreground="{StaticResource Brush.TextMuted}"
+                           Margin="0,4,0,0"/>
+                <TextBlock Text="本地存档编辑器 · 无需上传文件，全部处理都在本机完成"
+                           FontSize="13" Foreground="{StaticResource Brush.Accent}"
+                           Margin="0,8,0,18" TextWrapping="Wrap"/>
+
+                <!-- 功能 -->
+                <Border Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                        CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="功能" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
+                                   LineHeight="22" TextWrapping="Wrap"
+                                   Text="• 自动识别存档格式，不依赖扩展名&#x0a;• 树状浏览字段，选中即可编辑&#x0a;• 保存前自动生成 .bak 备份&#x0a;• 两份存档对比，标出新增/删除/修改&#x0a;• 按字段名批量修改（支持 * 和 ? 通配符）&#x0a;• 导出为 JSON 查看，或导入外部编辑的 JSON&#x0a;• 自动解包 GZip / Zstd / LZ4 / BZip2 / Brotli / Base64"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 使用步骤 -->
+                <Border Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                        CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="使用步骤" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
+                                   LineHeight="22" TextWrapping="Wrap"
+                                   Text="1. 点「打开存档」，或把文件直接拖进窗口&#x0a;2. 左侧树展开到目标字段，点击选中&#x0a;3. 右侧「值」框里修改，改过的字段会出现红点&#x0a;4. 点「保存修改」写入磁盘（自动生成 .bak）&#x0a;5. 进游戏验证；若异常，把 .bak 改名覆盖即可回滚"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 支持格式 -->
+                <Border Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                        CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="支持的存档格式" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
+                                   LineHeight="22" TextWrapping="Wrap"
+                                   Text="JSON · XML · INI/CFG · NBT &#x0a;plist（XML + binary）· MessagePack · CBOR&#x0a;Unreal Engine .sav（UE 4.26 – 5.6）&#x0a;Ren'Py .save · RPG Maker XP/VX/VX Ace/MV/MZ&#x0a;无法识别时以十六进制视图打开（只读）"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 快捷键 -->
+                <Border Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                        CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="快捷键" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
+                                   LineHeight="22" TextWrapping="Wrap"
+                                   Text="Ctrl + O    打开存档&#x0a;Ctrl + S    保存修改&#x0a;Ctrl + F    聚焦搜索框&#x0a;Esc         清空搜索&#x0a;F5          重新加载当前文件"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 安全提示 -->
+                <Border Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1"
+                        CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="重要提示" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="#C2410C" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="12" Foreground="#9A3412"
+                                   LineHeight="22" TextWrapping="Wrap"
+                                   Text="• 修改存档有风险，请先自行备份重要进度&#x0a;• 部分游戏带完整性校验，改动后可能无法读取&#x0a;• 联机游戏修改存档可能违反用户协议&#x0a;• 本工具只处理本地文件，不上传任何数据"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 许可 -->
+                <Border Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                        CornerRadius="8" Padding="16,12" Margin="0,0,0,18">
+                    <StackPanel>
+                        <TextBlock Text="开源与致谢" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
+                                   LineHeight="22" TextWrapping="Wrap"
+                                   Text="本项目以 MIT 协议开源。&#x0a;Unreal 存档解析使用 UeSaveGame（Apache-2.0）。&#x0a;压缩层使用 ZstdSharp.Port、K4os.Compression.LZ4、SharpZipLib（均为 MIT）。"/>
+                    </StackPanel>
+                </Border>
+
+                <Button Content="关闭" Style="{StaticResource BtnPrimary}"
+                        Padding="24,8" HorizontalAlignment="Right"
+                        IsCancel="True" Click="BtnClose_Click"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

@@ -1,0 +1,19 @@
+# 构建产物
+bin/
+obj/
+publish/
+
+# 用户目录产物
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# 存档测试产物
+*.bak
+.verify/
+
+# 系统文件
+Thumbs.db
+desktop.ini
+.DS_Store

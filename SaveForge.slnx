@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SaveForge.Core/SaveForge.Core.csproj" />
+    <Project Path="src/SaveForge.App/SaveForge.App.csproj" />
+  </Folder>
+  <Folder Name="/src/ThirdParty/">
+    <Project Path="src/ThirdParty/UeSaveGame/UeSaveGame.csproj" />
+  </Folder>
+</Solution>
