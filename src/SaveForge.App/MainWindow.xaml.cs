@@ -173,7 +173,7 @@ public partial class MainWindow : Window
 
         if (_document is null || !IsRpgMakerSave(path, _document.FormatId)) return;
 
-        _database = GameDatabase.TryAutoLoad(path);
+        _database = GameDatabase.TryAutoLoad(path, _document.FormatId);
         if (_database is null) return;
 
         int mapped = _database.ApplyTo(_document);

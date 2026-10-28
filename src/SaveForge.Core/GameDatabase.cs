@@ -47,16 +47,30 @@ public sealed class GameDatabase
     // 加载
     // ====================================================================
 
-    /// <summary>从存档路径自动探测游戏数据目录。找不到返回 null。</summary>
-    public static GameDatabase? TryAutoLoad(string saveFilePath)
+    /// <summary>
+    /// 从存档路径自动探测游戏数据目录。找不到、或不是 RPG Maker 存档时返回 null。
+    ///
+    /// 两道防线，避免把别的游戏的数据库套到当前存档上（串档）：
+    ///   1. 只服务 RPG Maker 存档（扩展名或格式判定）
+    ///   2. data 目录的父目录必须像 RPG Maker 游戏根（有 Game.exe / img / js 等特征）
+    /// </summary>
+    public static GameDatabase? TryAutoLoad(string saveFilePath, string? formatId = null)
     {
+        if (string.IsNullOrEmpty(saveFilePath)) return null;
+
+        bool isRpgMaker = saveFilePath.EndsWith(".rmmzsave", StringComparison.OrdinalIgnoreCase)
+                       || saveFilePath.EndsWith(".rpgsave", StringComparison.OrdinalIgnoreCase)
+                       || formatId is "rpgmaker" or "rpgmaker-mv";
+
+        if (!isRpgMaker) return null;
+
         string? directory = Path.GetDirectoryName(saveFilePath);
         if (string.IsNullOrEmpty(directory)) return null;
 
         var current = new DirectoryInfo(directory);
 
-        // 存档通常在 <game>/save/ 下，向上 4 层足够覆盖常见布局
-        for (int depth = 0; depth < 4 && current is not null; depth++)
+        // 存档通常在 <game>/save/ 下，向上 3 层足够
+        for (int depth = 0; depth < 3 && current is not null; depth++)
         {
             foreach (string candidate in new[]
                      {
@@ -64,19 +78,43 @@ public sealed class GameDatabase
                          Path.Combine(current.FullName, "www", "data"),
                      })
             {
-                if (File.Exists(Path.Combine(candidate, "Items.json")) ||
-                    File.Exists(Path.Combine(candidate, "Weapons.json")) ||
-                    File.Exists(Path.Combine(candidate, "Armors.json")))
-                {
-                    var database = LoadDirectory(candidate);
-                    if (!database.IsEmpty) return database;
-                }
+                if (!HasDatabase(candidate)) continue;
+
+                // data 的父目录（<game> 或 <game>/www）必须带 RPG Maker 的结构特征
+                string? gameRoot = Path.GetDirectoryName(candidate);
+                if (gameRoot is null || !LooksLikeRpgMakerGame(gameRoot)) continue;
+
+                var database = LoadDirectory(candidate);
+                if (!database.IsEmpty) return database;
             }
 
             current = current.Parent;
         }
 
         return null;
+    }
+
+    private static bool HasDatabase(string dataDirectory) =>
+        File.Exists(Path.Combine(dataDirectory, "Items.json")) ||
+        File.Exists(Path.Combine(dataDirectory, "Weapons.json")) ||
+        File.Exists(Path.Combine(dataDirectory, "Armors.json"));
+
+    /// <summary>
+    /// 判断目录是否是 RPG Maker 游戏根（或 MV/MZ 的 www 目录）。
+    /// 只靠 data/ 存在不够——玩家的存档目录常常和别的游戏混在同一层。
+    /// </summary>
+    private static bool LooksLikeRpgMakerGame(string root)
+    {
+        if (Directory.Exists(Path.Combine(root, "img"))) return true;
+        if (Directory.Exists(Path.Combine(root, "audio"))) return true;
+        if (Directory.Exists(Path.Combine(root, "js"))) return true;
+
+        if (File.Exists(Path.Combine(root, "Game.exe"))) return true;
+        if (File.Exists(Path.Combine(root, "Game.rpgproject"))) return true;
+        if (File.Exists(Path.Combine(root, "package.json"))) return true;
+        if (File.Exists(Path.Combine(root, "nw.dll"))) return true;
+
+        return false;
     }
 
     /// <summary>加载一个 data 目录下的三张表（缺失的跳过）。</summary>
