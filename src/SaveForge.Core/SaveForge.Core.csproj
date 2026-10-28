@@ -22,4 +22,11 @@
     <Using Include="System.Text.Json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 回归测试需要构造各格式的样本（LZString / Ruby Marshal / pickle 等编码器为 internal） -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>SaveForge.Regression</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

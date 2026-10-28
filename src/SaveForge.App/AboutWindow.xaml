@@ -30,7 +30,7 @@
                                    Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
                         <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
                                    LineHeight="22" TextWrapping="Wrap"
-                                   Text="• 自动识别存档格式，不依赖扩展名&#x0a;• 字段翻译成中文（金钱 / 等级 / 当前 HP），原始键名同时保留&#x0a;• RPG Maker 存档顶部显示金钱/物品/队伍等常用数据卡片&#x0a;• 树状浏览字段，选中即可编辑&#x0a;• 保存前自动生成 .bak 备份&#x0a;• 两份存档对比，标出新增/删除/修改&#x0a;• 按字段名批量修改（支持通配符，可限定子树）&#x0a;• RPG Maker 库存自动显示物品名称（读游戏 data/Items.json）&#x0a;• 导出为 JSON 查看，或导入外部编辑的 JSON&#x0a;• 自动解包 GZip / Zstd / LZ4 / BZip2 / Brotli / Base64"/>
+                                   Text="• 自动识别存档格式，不依赖扩展名&#x0a;• 字段翻译成中文（金钱 / 等级 / 当前 HP），原始键名同时保留&#x0a;• 顶部菜单按存档内容生成：概览 / 全部字段 / 物品 / 武器 / 防具&#x0a;• 概览页可直接修改金钱、步数、存档次数&#x0a;• 库存以表格呈现，双击数量即可修改，支持筛选与一键全部设为&#x0a;• 「游戏目录」自动定位 data/Items.json，把物品 ID 显示成名称&#x0a;• 树状浏览字段，选中即可编辑&#x0a;• 保存前自动生成 .bak 备份&#x0a;• 两份存档对比，标出新增/删除/修改&#x0a;• 按字段名批量修改（支持通配符，可限定子树）&#x0a;• 导出为 JSON 查看，或导入外部编辑的 JSON&#x0a;• 自动解包 GZip / Zstd / LZ4 / BZip2 / Brotli / Base64"/>
                     </StackPanel>
                 </Border>
 
@@ -43,7 +43,7 @@
                                    Foreground="{StaticResource Brush.Text}" Margin="0,0,0,8"/>
                         <TextBlock FontSize="12" Foreground="{StaticResource Brush.Text}"
                                    LineHeight="22" TextWrapping="Wrap"
-                                   Text="1. 点「打开存档」，或把文件直接拖进窗口&#x0a;2. 左侧树展开到目标字段，点击选中&#x0a;3. 右侧「值」框里修改，改过的字段会出现红点&#x0a;4. 点「保存修改」写入磁盘（自动生成 .bak）&#x0a;5. 进游戏验证；若异常，把 .bak 改名覆盖即可回滚"/>
+                                   Text="1. 点「打开存档」，或把文件直接拖进窗口&#x0a;2. RPG Maker 游戏可先点「游戏目录」选择游戏文件夹，自动载入物品表&#x0a;3. 左侧顶部选择「概览 / 物品 / 全部字段」等页面&#x0a;4. 概览页直接改数值；库存页双击数量；其余字段在「全部字段」里改&#x0a;5. 点「保存修改」写入磁盘（自动生成 .bak）&#x0a;6. 进游戏验证；若异常，把 .bak 改名覆盖即可回滚"/>
                     </StackPanel>
                 </Border>
 

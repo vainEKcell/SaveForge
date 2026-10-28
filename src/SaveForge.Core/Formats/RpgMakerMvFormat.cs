@@ -8,12 +8,17 @@ namespace SaveForge.Core.Formats;
 /// 存储链路：
 ///   游戏对象 → JsonEx.stringify → JSON 文本 → LZString.compressToBase64 → 文件
 ///
+/// 不同版本的外层不一样：
+///   - MV 常见：LZString base64 文本
+///   - MV 明文 / 部分插件：直接是 JSON
+///   - MZ 常见：JSON 被 pako(zlib) 压缩后再按 UTF-8 写入（由压缩层处理）
+///
 /// JsonEx 的编码特点（为了处理循环引用）：
-///   所有对象/数组都会被放进一个 contents 数组，字段位置写成 {"@": 索引} 引用；
+///   对象/数组会被放进一个 contents 数组，字段位置写成 {"@": 索引} 引用；
 ///   浮点数写成 {"@r": "1.5"} 以免被 JSON 解析成整数。
 ///
 /// 写回策略：
-///   不做"展开后重建"，而是直接在原始 contents 的 JsonNode 上就地改值，
+///   不做"展开后重建"，而是直接在原始 JsonNode 上就地改值，
 ///   这样对象之间的共享引用与循环引用完全保持原样，不会破坏游戏状态。
 /// </summary>
 public sealed class RpgMakerMvFormat : ISaveFormat
@@ -35,9 +40,14 @@ public sealed class RpgMakerMvFormat : ISaveFormat
 
         string text = DecodeText(data);
 
-        // 明文 JsonEx 数组：只在扩展名匹配时接管，且分数要高于通用 JSON（0.95）
-        if (text.StartsWith('['))
-            return knownExtension ? 0.97f : 0f;
+        // 明文 JSON（数组或对象）：只在扩展名匹配时接管，且分数要高于通用 JSON（0.95）
+        if (text.StartsWith('[') || text.StartsWith('{'))
+        {
+            if (!knownExtension) return 0f;
+
+            try { return JsonNode.Parse(text) is JsonArray or JsonObject ? 0.97f : 0f; }
+            catch { return 0f; }
+        }
 
         // 只可能是 LZString 的 base64 输出
         foreach (char c in text)
@@ -55,8 +65,8 @@ public sealed class RpgMakerMvFormat : ISaveFormat
             return 0f;
         }
 
-        if (string.IsNullOrEmpty(decompressed) || !decompressed.StartsWith('['))
-            return 0f;
+        if (string.IsNullOrEmpty(decompressed)) return 0f;
+        if (!decompressed.StartsWith('[') && !decompressed.StartsWith('{')) return 0f;
 
         return knownExtension ? 0.97f : 0.80f;
     }
@@ -65,9 +75,8 @@ public sealed class RpgMakerMvFormat : ISaveFormat
     {
         string text = DecodeText(data);
 
-        string json = text.StartsWith('[') || text.StartsWith('{')
-            ? text
-            : LzString.DecompressFromBase64(text);
+        bool plainJson = text.StartsWith('[') || text.StartsWith('{');
+        string json = plainJson ? text : LzString.DecompressFromBase64(text);
 
         if (string.IsNullOrEmpty(json))
             throw new InvalidDataException("LZString 解压失败，可能不是 MV/MZ 存档");
@@ -82,10 +91,21 @@ public sealed class RpgMakerMvFormat : ISaveFormat
             throw new InvalidDataException($"JsonEx 解析失败：{ex.Message}", ex);
         }
 
-        var contents = parsed as JsonArray
-            ?? throw new InvalidDataException("JsonEx 根节点应为数组");
+        JsonNode root = parsed switch
+        {
+            JsonArray arrayRoot => arrayRoot,
+            JsonObject objectRoot => objectRoot,
+            _ => throw new InvalidDataException("JsonEx 根节点应为数组或对象"),
+        };
 
-        if (contents.Count == 0)
+        // 引用表：
+        //   - 数组根：根数组本身就是 JsonEx 的对象表（沿用 MZ 的布局）
+        //   - 对象根：按 JsonEx.stringify 的遍历顺序重建对象表
+        var references = root is JsonObject
+            ? BuildReferenceTable(root)
+            : ((JsonArray)root).Cast<JsonNode>().ToList();
+
+        if (root is JsonArray && references.Count == 0)
             throw new InvalidDataException("JsonEx 内容为空");
 
         var document = new SaveDocument
@@ -94,10 +114,20 @@ public sealed class RpgMakerMvFormat : ISaveFormat
             FormatId = Id,
             FormatName = DisplayName,
             OriginalBytes = data,
-            Tag = new MvContext { Contents = contents, WasCompressed = !text.StartsWith('[') },
+            Tag = new MvContext
+            {
+                Root = root,
+                References = references,
+                WasCompressed = !plainJson,
+            },
         };
 
-        document.Roots.Add(BuildNode(contents[0], contents, "存档", 0, null));
+        int budget = 300_000;
+
+        document.Roots.Add(root is JsonArray array
+            ? BuildNode(array[0], references, "存档", 0, null, ref budget)
+            : BuildNode(root, references, "存档", 0, null, ref budget));
+
         document.AcceptChanges();
 
         return document;
@@ -111,11 +141,15 @@ public sealed class RpgMakerMvFormat : ISaveFormat
         ApplyChanges(document);
 
         // JsonEx 要求紧凑 JSON（无缩进），压缩后体积才正常
-        string json = context.Contents.ToJsonString(new JsonSerializerOptions
+        string json = context.Root.ToJsonString(new JsonSerializerOptions
         {
             WriteIndented = false,
             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         });
+
+        // 原文件是明文就写回明文；是 LZString 就保持 LZString。
+        // 外层 pako 压缩由压缩层负责，不在这里重复处理。
+        if (!context.WasCompressed) return Encoding.UTF8.GetBytes(json);
 
         string encoded = LzString.CompressToBase64(json);
         return Encoding.UTF8.GetBytes(encoded);
@@ -143,7 +177,13 @@ public sealed class RpgMakerMvFormat : ISaveFormat
     // JsonEx → 节点树
     // ====================================================================
 
-    private static SaveNode BuildNode(JsonNode? node, JsonArray contents, string name, int depth, MvSlot? slot)
+    private static SaveNode BuildNode(
+        JsonNode? node,
+        IReadOnlyList<JsonNode> references,
+        string name,
+        int depth,
+        MvSlot? slot,
+        ref int budget)
     {
         var result = new SaveNode { Name = name };
 
@@ -154,7 +194,15 @@ public sealed class RpgMakerMvFormat : ISaveFormat
             return result;
         }
 
-        JsonNode? resolved = Resolve(node, contents);
+        // JsonEx 的共享引用可能形成环，靠总节点预算兜底，避免展开成无限树
+        if (budget-- <= 0)
+        {
+            result.InitValue("…（节点过多，已截断）", ValueKind.String);
+            result.IsEditable = false;
+            return result;
+        }
+
+        JsonNode? resolved = Resolve(node, references);
 
         // 浮点特殊表示：{"@r": "1.5"}
         if (resolved is JsonObject floatWrapper && floatWrapper.ContainsKey("@r"))
@@ -192,10 +240,11 @@ public sealed class RpgMakerMvFormat : ISaveFormat
 
                     result.Children.Add(BuildNode(
                         pair.Value,
-                        contents,
+                        references,
                         pair.Key,
                         depth + 1,
-                        new MvSlot { Object = obj, Key = pair.Key }));
+                        new MvSlot { Object = obj, Key = pair.Key },
+                        ref budget));
                 }
 
                 break;
@@ -215,10 +264,11 @@ public sealed class RpgMakerMvFormat : ISaveFormat
 
                     result.Children.Add(BuildNode(
                         array[i],
-                        contents,
+                        references,
                         $"[{i}]",
                         depth + 1,
-                        new MvSlot { Array = array, Index = i }));
+                        new MvSlot { Array = array, Index = i },
+                        ref budget));
                 }
 
                 break;
@@ -260,8 +310,46 @@ public sealed class RpgMakerMvFormat : ISaveFormat
         return result;
     }
 
+    /// <summary>
+    /// 按 JsonEx.stringify 的遍历顺序重建对象引用表。
+    /// 只有"真实对象"会入表，{"@": n} 引用本身与 {"@r": ...} 浮点包装不入表。
+    /// </summary>
+    private static List<JsonNode> BuildReferenceTable(JsonNode root)
+    {
+        var table = new List<JsonNode>();
+
+        void Walk(JsonNode? node)
+        {
+            if (node is null) return;
+
+            if (node is JsonObject obj)
+            {
+                if (obj.ContainsKey("@") || obj.ContainsKey("@r")) return;
+
+                table.Add(obj);
+
+                foreach (var pair in obj)
+                {
+                    if (pair.Key is "@" or "@r") continue;
+                    Walk(pair.Value);
+                }
+
+                return;
+            }
+
+            if (node is JsonArray array)
+            {
+                table.Add(array);
+                foreach (var item in array) Walk(item);
+            }
+        }
+
+        Walk(root);
+        return table;
+    }
+
     /// <summary>递归解引用 {"@": 索引}，直到拿到实际对象。</summary>
-    private static JsonNode? Resolve(JsonNode? node, JsonArray contents, int depth = 0)
+    private static JsonNode? Resolve(JsonNode? node, IReadOnlyList<JsonNode> references, int depth = 0)
     {
         if (node is null || depth > MaxDepth) return node;
         if (node is not JsonObject obj) return node;
@@ -269,9 +357,9 @@ public sealed class RpgMakerMvFormat : ISaveFormat
         if (!obj.TryGetPropertyValue("@", out JsonNode? idNode)) return obj;
 
         int id = ToInt(idNode);
-        if (id < 0 || id >= contents.Count) return obj;
+        if (id < 0 || id >= references.Count) return obj;
 
-        return Resolve(contents[id], contents, depth + 1);
+        return Resolve(references[id], references, depth + 1);
     }
 
     private static int ToInt(JsonNode? node)
@@ -305,7 +393,13 @@ public sealed class RpgMakerMvFormat : ISaveFormat
 
     private sealed class MvContext
     {
-        public JsonArray Contents { get; init; } = new();
+        /// <summary>完整 JsonEx 根节点（数组或对象）。写回时整体序列化。</summary>
+        public JsonNode Root { get; init; } = new JsonArray();
+
+        /// <summary>引用表，对应 JsonEx 的对象表。</summary>
+        public IReadOnlyList<JsonNode> References { get; init; } = Array.Empty<JsonNode>();
+
+        /// <summary>原文件是否是 LZString 压缩文本。</summary>
         public bool WasCompressed { get; init; }
     }
 

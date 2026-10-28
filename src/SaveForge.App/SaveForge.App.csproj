@@ -7,10 +7,17 @@
     <RootNamespace>SaveForge.App</RootNamespace>
     <AssemblyName>SaveForge</AssemblyName>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>..\..\assets\icon\SaveForge.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SaveForge.Core\SaveForge.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\assets\icon\SaveForge.ico">
+      <Link>Assets\SaveForge.ico</Link>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>

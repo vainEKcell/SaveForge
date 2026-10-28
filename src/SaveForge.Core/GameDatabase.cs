@@ -103,7 +103,7 @@ public sealed class GameDatabase
     /// 判断目录是否是 RPG Maker 游戏根（或 MV/MZ 的 www 目录）。
     /// 只靠 data/ 存在不够——玩家的存档目录常常和别的游戏混在同一层。
     /// </summary>
-    private static bool LooksLikeRpgMakerGame(string root)
+    public static bool LooksLikeRpgMakerGame(string root)
     {
         if (Directory.Exists(Path.Combine(root, "img"))) return true;
         if (Directory.Exists(Path.Combine(root, "audio"))) return true;
@@ -187,8 +187,17 @@ public sealed class GameDatabase
     // ====================================================================
 
     /// <summary>
+    /// 字段名归一化：去掉 Ruby Marshal 的 @ 前缀和 RPG Maker 的下划线前缀，
+    /// 统一小写。这样 @items / _items / items 都能对上同一张表。
+    /// </summary>
+    public static string NormalizeFieldName(string name) =>
+        name.TrimStart('@', '_').ToLowerInvariant();
+
+    /// <summary>
     /// 把数据库名称写到存档节点上（Alias），返回成功映射的字段数。
-    /// 只处理 party 下的 _items / _weapons / _armors。
+    ///
+    /// 不写死路径，而是在每个对象节点上找 items / weapons / armors 容器。
+    /// 容器必须真的有「数字键 → 数量」子节点，避免把别的同名对象误当库存。
     /// </summary>
     public int ApplyTo(SaveDocument document)
     {
@@ -200,23 +209,25 @@ public sealed class GameDatabase
         {
             foreach (var node in root.Descendants())
             {
-                if (node.Kind != ValueKind.Object || node.Name != "party") continue;
+                if (node.Kind != ValueKind.Object) continue;
 
-                applied += ApplyTable(node, "_items", Items);
-                applied += ApplyTable(node, "_weapons", Weapons);
-                applied += ApplyTable(node, "_armors", Armors);
+                applied += ApplyTable(node, "items", Items);
+                applied += ApplyTable(node, "weapons", Weapons);
+                applied += ApplyTable(node, "armors", Armors);
             }
         }
 
         return applied;
     }
 
-    private static int ApplyTable(SaveNode party, string fieldName, IReadOnlyDictionary<int, string> table)
+    private static int ApplyTable(SaveNode parent, string fieldName, IReadOnlyDictionary<int, string> table)
     {
         if (table.Count == 0) return 0;
 
-        var container = party.Children.FirstOrDefault(c => c.Name == fieldName);
-        if (container is null || !container.IsContainer) return 0;
+        var container = parent.Children.FirstOrDefault(c =>
+            c.IsContainer && NormalizeFieldName(c.Name) == fieldName);
+
+        if (container is null) return 0;
 
         int count = 0;
 

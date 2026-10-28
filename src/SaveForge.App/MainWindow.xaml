@@ -3,13 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SaveForge · 存档修改器"
         Height="760" Width="1200"
-        MinHeight="520" MinWidth="920"
+        MinHeight="520" MinWidth="940"
         Background="{StaticResource Brush.Background}"
         FontFamily="Microsoft YaHei UI, Segoe UI"
         WindowStartupLocation="CenterScreen"
         AllowDrop="True"
         DragOver="Window_DragOver"
-        Drop="Window_Drop">
+        Drop="Window_Drop"
+        Icon="Assets/SaveForge.ico">
 
     <Grid Margin="14">
         <Grid.RowDefinitions>
@@ -26,61 +27,47 @@
                 CornerRadius="10"
                 Padding="12,10"
                 Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <WrapPanel Orientation="Horizontal">
+                <Button x:Name="BtnOpen" Content="打开存档" Style="{StaticResource BtnPrimary}"
+                        Margin="0,0,8,0" Click="BtnOpen_Click"/>
+                <Button x:Name="BtnSave" Content="保存修改" Style="{StaticResource Btn}"
+                        Margin="0,0,8,0" IsEnabled="False" Click="BtnSave_Click"/>
+                <Button x:Name="BtnBackup" Content="生成备份" Style="{StaticResource Btn}"
+                        Margin="0,0,8,0" IsEnabled="False" Click="BtnBackup_Click"/>
+                <Button x:Name="BtnDiff" Content="对比存档" Style="{StaticResource Btn}"
+                        Margin="0,0,8,0" IsEnabled="False" Click="BtnDiff_Click"/>
+                <Button x:Name="BtnBatch" Content="批量修改" Style="{StaticResource Btn}"
+                        Margin="0,0,16,0" IsEnabled="False" Click="BtnBatch_Click"/>
 
-                <StackPanel Orientation="Horizontal">
-                    <Button x:Name="BtnOpen" Content="打开存档" Style="{StaticResource BtnPrimary}"
-                            Click="BtnOpen_Click"/>
-                    <Button x:Name="BtnSave" Content="保存修改" Style="{StaticResource Btn}"
-                            Margin="8,0,0,0" IsEnabled="False" Click="BtnSave_Click"/>
-                    <Button x:Name="BtnBackup" Content="生成备份" Style="{StaticResource Btn}"
-                            Margin="8,0,0,0" IsEnabled="False" Click="BtnBackup_Click"/>
-                    <Button x:Name="BtnDiff" Content="对比存档" Style="{StaticResource Btn}"
-                            Margin="8,0,0,0" IsEnabled="False" Click="BtnDiff_Click"/>
-                    <Button x:Name="BtnBatch" Content="批量修改" Style="{StaticResource Btn}"
-                            Margin="8,0,0,0" IsEnabled="False" Click="BtnBatch_Click"/>
-                </StackPanel>
+                <Button x:Name="BtnExportJson" Content="导出 JSON" Style="{StaticResource Btn}"
+                        Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
+                        Click="BtnExportJson_Click"/>
+                <Button x:Name="BtnImportJson" Content="导入 JSON" Style="{StaticResource Btn}"
+                        Padding="10,5" Margin="0,0,16,0" IsEnabled="False"
+                        Click="BtnImportJson_Click"/>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"
-                            VerticalAlignment="Center">
-                    <Button x:Name="BtnExportJson" Content="导出 JSON" Style="{StaticResource Btn}"
-                            Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
-                            Click="BtnExportJson_Click"/>
-                    <Button x:Name="BtnImportJson" Content="导入 JSON" Style="{StaticResource Btn}"
-                            Padding="10,5" Margin="0,0,12,0" IsEnabled="False"
-                            Click="BtnImportJson_Click"/>
-                    <TextBlock x:Name="TxtFileName" Text="未打开文件"
-                               FontSize="13" Foreground="{StaticResource Brush.TextMuted}"
-                               VerticalAlignment="Center" Margin="0,0,10,0"
-                               MaxWidth="300" TextTrimming="CharacterEllipsis"/>
-                    <Border x:Name="BadgeFormat" Background="{StaticResource Brush.Subtle}"
-                            CornerRadius="5" Padding="8,3" VerticalAlignment="Center">
-                        <TextBlock x:Name="TxtFormat" Text="—"
-                                   FontSize="11" Foreground="{StaticResource Brush.TextMuted}"/>
-                    </Border>
-                    <Button x:Name="BtnLoadDatabase" Content="物品库" Style="{StaticResource Btn}"
-                            Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
-                            ToolTip="载入游戏的 Items.json / Weapons.json / Armors.json，把物品 ID 显示成中文名称"
-                            Click="BtnLoadDatabase_Click"/>
-                    <Button x:Name="BtnAbout" Content="关于" Style="{StaticResource Btn}"
-                            Padding="10,5" Margin="6,0,0,0" Click="BtnAbout_Click"/>
-                </StackPanel>
-            </Grid>
+                <Button x:Name="BtnGameRoot" Content="游戏目录" Style="{StaticResource Btn}"
+                        Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
+                        ToolTip="选择游戏所在的文件夹，自动读取 Items / Weapons / Armors 数据表，把物品 ID 显示成名称"
+                        Click="BtnGameRoot_Click"/>
+                <Button x:Name="BtnLoadDatabase" Content="数据表" Style="{StaticResource Btn}"
+                        Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
+                        ToolTip="只载入单个数据表文件（Items.json / Weapons.json / Armors.json）"
+                        Click="BtnLoadDatabase_Click"/>
+                <Button x:Name="BtnAbout" Content="关于" Style="{StaticResource Btn}"
+                        Padding="10,5" Click="BtnAbout_Click"/>
+            </WrapPanel>
         </Border>
 
         <!-- ==================== 主区域 ==================== -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MinWidth="380"/>
+                <ColumnDefinition Width="*" MinWidth="400"/>
                 <ColumnDefinition Width="6"/>
                 <ColumnDefinition Width="380" MinWidth="320"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 字段树 -->
+            <!-- 左：导航 + 页面 -->
             <Border Background="{StaticResource Brush.Surface}"
                     BorderBrush="{StaticResource Brush.Border}"
                     BorderThickness="1"
@@ -88,118 +75,229 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Margin="16,12,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Text="字段" FontSize="12" FontWeight="SemiBold"
-                                   Foreground="{StaticResource Brush.TextMuted}"
-                                   VerticalAlignment="Center"/>
-
-                        <TextBox x:Name="TxtSearch" Grid.Column="1"
-                                 Style="{StaticResource Input}"
-                                 Padding="7,4" FontSize="12" Margin="12,0,0,0"
-                                 ToolTip="按字段名或值过滤（Ctrl+F 聚焦，Esc 清空）"
-                                 TextChanged="TxtSearch_TextChanged"/>
-                    </Grid>
-
-                    <!-- 常用属性概览：让不懂存档结构的用户一眼看到关键数据 -->
-                    <Border x:Name="OverviewPanel" Grid.Row="1" Margin="12,0,12,10"
-                            Visibility="Collapsed">
-                        <WrapPanel x:Name="OverviewItems" Orientation="Horizontal"/>
+                    <!-- 顶部导航：菜单项由存档实际包含的数据决定 -->
+                    <Border Grid.Row="0"
+                            BorderBrush="{StaticResource Brush.Border}"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,7">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <StackPanel x:Name="NavBar" Orientation="Horizontal"/>
+                        </ScrollViewer>
                     </Border>
 
-                    <TreeView x:Name="FieldTree" Grid.Row="2"
-                              Margin="8,0,8,10"
-                              Background="Transparent"
-                              BorderThickness="0"
-                              ItemContainerStyle="{StaticResource FieldTreeItem}"
-                              SelectedItemChanged="FieldTree_SelectedItemChanged"
-                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling">
-                        <TreeView.ItemTemplate>
-                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                <Grid MinHeight="22">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="1">
 
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding DisplayName}" FontSize="13"
-                                                   Foreground="{StaticResource Brush.Text}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding RawKey}" FontSize="10"
-                                                   Margin="6,1,0,0" Foreground="#9AA3AF"
-                                                   VerticalAlignment="Center">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding RawKey}" Value="">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RawKey}" Value="{x:Null}">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                        <!-- 概览页 -->
+                        <ScrollViewer x:Name="OverviewPage" Visibility="Collapsed"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="16,14,16,16">
+                                <TextBlock Text="存档概览" FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Brush.Text}"/>
+                                <TextBlock Text="常用数值可以直接改；点带箭头的卡片切换到对应页面"
+                                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                                           Margin="0,4,0,0" TextWrapping="Wrap"/>
+
+                                <WrapPanel x:Name="OverviewItems" Margin="0,12,0,0"/>
+
+                                <Border Background="{StaticResource Brush.Subtle}"
+                                        CornerRadius="8" Padding="12,10" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="游戏数据表" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource Brush.TextMuted}"/>
+                                        <TextBlock x:Name="TxtDatabaseInfo"
+                                                   Text="未载入：物品只会显示 ID。"
+                                                   FontSize="11" Foreground="#6B7280"
+                                                   TextWrapping="Wrap" Margin="0,4,0,8"/>
+                                        <Button x:Name="BtnChooseGameRoot" Content="选择游戏目录…"
+                                                Style="{StaticResource Btn}" Padding="10,4"
+                                                HorizontalAlignment="Left"
+                                                Click="BtnGameRoot_Click"/>
                                     </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
 
-                                    <TextBlock Grid.Column="1" Text="●" FontSize="10" Margin="4,0,0,0"
-                                               Foreground="{StaticResource Brush.Modified}"
-                                               VerticalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsModified}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                        <!-- 全部字段页 -->
+                        <Grid x:Name="FieldsPage">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                                    <TextBlock Grid.Column="2" Text="{Binding KindLabel}" FontSize="10"
-                                               Foreground="#9AA3AF" Margin="8,1,0,0"
-                                               VerticalAlignment="Center"/>
+                            <Grid Margin="16,10,16,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                                    <TextBlock Grid.Column="3" Text="{Binding ValueText}" FontSize="12"
-                                               Foreground="{StaticResource Brush.Accent}"
-                                               Margin="14,0,10,0"
-                                               TextAlignment="Right"
-                                               TextTrimming="CharacterEllipsis"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
-                            </HierarchicalDataTemplate>
-                        </TreeView.ItemTemplate>
-                    </TreeView>
+                                <TextBlock Text="字段" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Brush.TextMuted}"
+                                           VerticalAlignment="Center"/>
+
+                                <TextBox x:Name="TxtSearch" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         Padding="7,4" FontSize="12" Margin="12,0,0,0"
+                                         ToolTip="按字段名或值过滤（Ctrl+F 聚焦，Esc 清空）"
+                                         TextChanged="TxtSearch_TextChanged"/>
+                            </Grid>
+
+                            <TreeView x:Name="FieldTree" Grid.Row="1"
+                                      Margin="8,0,8,10"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      ItemContainerStyle="{StaticResource FieldTreeItem}"
+                                      SelectedItemChanged="FieldTree_SelectedItemChanged"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling">
+                                <TreeView.ItemTemplate>
+                                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                        <Grid MinHeight="22">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding DisplayName}" FontSize="13"
+                                                           Foreground="{StaticResource Brush.Text}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding RawKey}" FontSize="10"
+                                                           Margin="6,1,0,0" Foreground="#9AA3AF"
+                                                           VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RawKey}" Value="">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding RawKey}" Value="{x:Null}">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="1" Text="●" FontSize="10" Margin="4,0,0,0"
+                                                       Foreground="{StaticResource Brush.Modified}"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsModified}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
+                                            <TextBlock Grid.Column="2" Text="{Binding KindLabel}" FontSize="10"
+                                                       Foreground="#9AA3AF" Margin="8,1,0,0"
+                                                       VerticalAlignment="Center"/>
+
+                                            <TextBlock Grid.Column="3" Text="{Binding ValueText}" FontSize="12"
+                                                       Foreground="{StaticResource Brush.Accent}"
+                                                       Margin="14,0,10,0"
+                                                       TextAlignment="Right"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </HierarchicalDataTemplate>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
+                        </Grid>
+
+                        <!-- 库存页：物品 / 武器 / 防具共用 -->
+                        <Grid x:Name="InventoryPage" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="16,12,16,2">
+                                <TextBlock x:Name="TxtInventoryTitle" Text="物品"
+                                           FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Brush.Text}"/>
+                                <TextBlock x:Name="TxtInventoryCount" FontSize="11"
+                                           Foreground="{StaticResource Brush.TextMuted}"
+                                           VerticalAlignment="Bottom" Margin="8,0,0,2"/>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1" Margin="16,8,16,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox x:Name="TxtItemFilter" Style="{StaticResource Input}"
+                                         Padding="7,4" FontSize="12"
+                                         ToolTip="按名称或 ID 筛选库存"
+                                         TextChanged="TxtItemFilter_TextChanged"/>
+
+                                <TextBlock Grid.Column="1" Text="全部设为" FontSize="11"
+                                           Foreground="{StaticResource Brush.TextMuted}"
+                                           VerticalAlignment="Center" Margin="8,0,5,0"/>
+
+                                <TextBox x:Name="TxtBulkValue" Grid.Column="2" Width="58"
+                                         Style="{StaticResource Input}" Padding="7,4" FontSize="12"
+                                         ToolTip="把当前筛选出的条目数量统一改成这个值"/>
+
+                                <Button x:Name="BtnApplyBulk" Grid.Column="3" Content="应用"
+                                        Style="{StaticResource Btn}" Padding="10,4" FontSize="12"
+                                        Margin="6,0,0,0" Click="BtnApplyBulk_Click"/>
+                            </Grid>
+
+                            <DataGrid x:Name="InventoryGrid" Grid.Row="2"
+                                      Style="{StaticResource InventoryTable}"
+                                      ColumnHeaderStyle="{StaticResource InventoryHeader}"
+                                      RowStyle="{StaticResource InventoryRow}"
+                                      CellStyle="{StaticResource InventoryCell}"
+                                      SelectionChanged="InventoryGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="名称" Binding="{Binding Name}"
+                                                        IsReadOnly="True" Width="*"/>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}"
+                                                        IsReadOnly="True" Width="52"/>
+                                    <DataGridTextColumn Header="数量"
+                                                        Binding="{Binding QuantityText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                        Width="76"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <TextBlock Grid.Row="3" Margin="16,6,16,10"
+                                       Text="双击「数量」列即可修改；没有名称时请先用工具栏「游戏目录」载入数据表。"
+                                       FontSize="10" Foreground="#9AA3AF" TextWrapping="Wrap"/>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Border>
 
             <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch"
                           Background="Transparent" ResizeBehavior="PreviousAndNext"/>
 
-            <!-- 详情面板 -->
+            <!-- 右：详情 / 说明 -->
             <Border Grid.Column="2"
                     Background="{StaticResource Brush.Surface}"
                     BorderBrush="{StaticResource Brush.Border}"
                     BorderThickness="1"
                     CornerRadius="10">
                 <Grid>
-                    <!-- 有选中 -->
+                    <!-- 字段详情 -->
                     <ScrollViewer x:Name="DetailScroll" VerticalScrollBarVisibility="Auto"
                                   Visibility="Collapsed">
                         <StackPanel Margin="18">
@@ -261,6 +359,71 @@
                         </StackPanel>
                     </ScrollViewer>
 
+                    <!-- 库存条目详情 -->
+                    <ScrollViewer x:Name="InventoryDetail" Visibility="Collapsed"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="18">
+
+                            <TextBlock Text="库存条目" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Brush.TextMuted}"/>
+
+                            <TextBlock x:Name="TxtItemName" FontSize="20" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Brush.Text}"
+                                       TextWrapping="Wrap" Margin="0,6,0,0"/>
+
+                            <TextBlock x:Name="TxtItemMeta" FontSize="11"
+                                       Foreground="#9AA3AF" Margin="0,5,0,0"
+                                       TextWrapping="Wrap"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Border Background="{StaticResource Brush.Subtle}" CornerRadius="5" Padding="8,3">
+                                    <TextBlock Text="数量" FontSize="11"
+                                               Foreground="{StaticResource Brush.TextMuted}"/>
+                                </Border>
+                                <Border x:Name="BadgeItemModified" Background="#FEF3C7" CornerRadius="5"
+                                        Padding="8,3" Margin="6,0,0,0" Visibility="Collapsed">
+                                    <TextBlock Text="已修改" FontSize="11"
+                                               Foreground="{StaticResource Brush.Modified}"/>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBox x:Name="TxtItemQty" Style="{StaticResource Input}"
+                                     FontSize="18" Padding="9,7" Margin="0,10,0,0"
+                                     TextChanged="TxtItemQty_TextChanged"/>
+
+                            <TextBlock Text="输入 0 – 9,999,999；0 表示保留条目但数量为零"
+                                       FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                                       Margin="0,7,0,0" TextWrapping="Wrap"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="设为 99" Style="{StaticResource Btn}" Padding="10,4"
+                                        FontSize="11" Click="BtnItemQty99_Click"/>
+                                <Button Content="设为 999" Style="{StaticResource Btn}" Padding="10,4"
+                                        FontSize="11" Margin="6,0,0,0" Click="BtnItemQty999_Click"/>
+                            </StackPanel>
+
+                            <TextBlock Text="定位" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Brush.TextMuted}" Margin="0,22,0,6"/>
+                            <TextBlock x:Name="TxtItemLocator" FontFamily="Consolas, Microsoft YaHei UI"
+                                       FontSize="12" Foreground="{StaticResource Brush.Text}"
+                                       TextWrapping="Wrap"/>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- 标签页说明 -->
+                    <StackPanel x:Name="TabHint" Visibility="Collapsed"
+                                VerticalAlignment="Center" Margin="30,24,30,24">
+                        <TextBlock x:Name="TxtTabHintTitle" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Text}"
+                                   HorizontalAlignment="Center" TextWrapping="Wrap"
+                                   TextAlignment="Center"/>
+                        <TextBlock x:Name="TxtTabHintBody" FontSize="11"
+                                   Foreground="{StaticResource Brush.TextMuted}"
+                                   TextWrapping="Wrap" TextAlignment="Center"
+                                   Margin="0,8,0,0" LineHeight="18"/>
+                    </StackPanel>
+
                     <!-- 空状态：面向完全不了解存档格式的用户 -->
                     <StackPanel x:Name="EmptyHint" VerticalAlignment="Center"
                                 Margin="28,24,28,24">
@@ -306,7 +469,7 @@
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                 <TextBlock Text="找到要改的项目" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{StaticResource Brush.Text}"/>
-                                <TextBlock Text="左侧列表显示「金钱」「等级」「物品」这类中文名，展开就能看到数值"
+                                <TextBlock Text="左侧顶部是菜单：「概览」改常用数值，「物品」直接改库存数量"
                                            FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
                                            TextWrapping="Wrap" Margin="0,2,0,0"/>
                             </StackPanel>
@@ -326,7 +489,7 @@
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                 <TextBlock Text="改完点保存" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{StaticResource Brush.Text}"/>
-                                <TextBlock Text="右侧输入新的值，点「保存修改」写入；会自动生成 .bak 备份"
+                                <TextBlock Text="点「保存修改」写入；会自动生成 .bak 备份"
                                            FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
                                            TextWrapping="Wrap" Margin="0,2,0,0"/>
                             </StackPanel>

@@ -6,4 +6,7 @@
   <Folder Name="/src/ThirdParty/">
     <Project Path="src/ThirdParty/UeSaveGame/UeSaveGame.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SaveForge.Regression/SaveForge.Regression.csproj" />
+  </Folder>
 </Solution>
