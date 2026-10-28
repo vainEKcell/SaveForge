@@ -37,6 +37,12 @@ public sealed class SaveDocument
     /// <summary>文档是否整体只读（如 UE 存档、binary plist 仅浏览）。</summary>
     public bool IsReadOnly { get; set; }
 
+    /// <summary>
+    /// 格式猜测失败时的原因。非 null 表示已降级为十六进制视图，
+    /// 用于在界面上解释"为什么这里只有原始字节"。
+    /// </summary>
+    public string? ParseError { get; set; }
+
     /// <summary>是否存在用户修改。</summary>
     public bool HasChanges => Roots.Any(r => r.Descendants().Any(n => n.IsModified));
 

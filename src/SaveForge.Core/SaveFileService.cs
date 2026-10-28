@@ -77,7 +77,12 @@ public sealed class SaveFileService
         {
             var fallback = _registry.Find("raw") ?? new RawFormat();
             document = fallback.Read(payload, filePath);
-            document.FormatName = $"{format.DisplayName} 解析失败：{ex.Message}";
+            document.ParseError = $"{format.DisplayName} 解析失败：{ex.Message}";
+
+            // 低置信度（如仅凭 .sav 扩展名）时不要把具体引擎写进标题，避免误导
+            document.FormatName = bestScore >= 0.6f
+                ? $"{format.DisplayName} 解析失败（十六进制预览）"
+                : "未识别格式（十六进制预览）";
         }
 
         document.FilePath = filePath;

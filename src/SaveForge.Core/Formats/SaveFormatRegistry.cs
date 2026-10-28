@@ -43,6 +43,7 @@ public sealed class SaveFormatRegistry
     public static SaveFormatRegistry CreateDefault()
     {
         var registry = new SaveFormatRegistry();
+        registry.Register(new SdtFormat());     // SVDT 加密容器（只读）
         registry.Register(new UnrealFormat()); // GVAS 魔数
         registry.Register(new RenpyFormat());  // ZIP 且含 log 条目
         registry.Register(new RpgMakerFormat()); // .rxdata/.rvdata/.rvdata2 + Marshal 4.8

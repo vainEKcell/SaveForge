@@ -40,6 +40,7 @@ public partial class MainWindow : Window
     private InventoryRowVm? _selectedItem;
     private InventoryCategory _inventoryCategory = InventoryCategory.Items;
     private string _navKey = "fields";
+    private bool _rawBytesVisible;
     private readonly Dictionary<string, Button> _navButtons = new();
 
     private bool _suppressValueChange;
@@ -95,6 +96,7 @@ public partial class MainWindow : Window
             _selected = null;
             _selectedItem = null;
             _databaseMapped = 0;
+            _rawBytesVisible = false;
 
             // RPG Maker 存档：尝试从游戏目录自动载入数据库，把物品 ID 显示成名称
             TryAttachGameDatabase(path);
@@ -123,6 +125,11 @@ public partial class MainWindow : Window
                     ? $"已自动载入游戏数据库（{_database.Summary}），识别 {_databaseMapped} 个库存条目"
                     : $"已自动载入游戏数据库（{_database.Summary}），但当前存档里没有匹配的条目";
             }
+
+            // 格式探测失败降级为十六进制时，把原因说清楚，而不是只显示原始字节
+            TxtStatus.ToolTip = _document?.ParseError;
+            if (_document is not null && _document.ParseError is not null)
+                TxtStatus.Text = $"未能解析：{_document.ParseError}";
         }
         catch (Exception ex)
         {
@@ -336,7 +343,13 @@ public partial class MainWindow : Window
         if (HasOverviewData())
             items.Add(("overview", "概览", "常用数值与游戏数据表"));
 
-        items.Add(("fields", "全部字段", "完整存档树，包含所有引擎的原始字段"));
+        bool unparsed = IsUnparsedDocument(_document);
+
+        items.Add(("fields",
+            unparsed ? "只读预览" : "全部字段",
+            unparsed
+                ? "该存档无法解析，仅提供原因说明与可选的原始字节预览"
+                : "完整存档树，包含所有引擎的原始字段"));
 
         foreach (InventoryCategory category in Enum.GetValues<InventoryCategory>())
         {
@@ -383,6 +396,8 @@ public partial class MainWindow : Window
         InventoryPage.Visibility = key is "items" or "weapons" or "armors"
             ? Visibility.Visible
             : Visibility.Collapsed;
+
+        UpdateParseIssuePanel();
 
         foreach (var (navKey, button) in _navButtons)
         {
@@ -453,6 +468,16 @@ public partial class MainWindow : Window
 
         if (TabHint.Visibility != Visibility.Visible) return;
 
+        if (_navKey == "fields" && IsUnparsedDocument(_document!))
+        {
+            TxtTabHintTitle.Text = "此存档无法解析";
+            TxtTabHintBody.Text =
+                "左侧说明了缺什么才能解码。\n\n" +
+                "原始字节默认隐藏，只在需要排查时展开；\n" +
+                "这里不会进行任何修改，也不会写回文件。";
+            return;
+        }
+
         switch (_navKey)
         {
             case "overview":
@@ -482,6 +507,65 @@ public partial class MainWindow : Window
                     "点一行即可在右侧修改它的值。";
                 break;
         }
+    }
+
+    // ====================================================================
+    // 无法解析的存档：先说明原因，原始字节按需展开
+    // ====================================================================
+
+    /// <summary>
+    /// raw（未识别二进制）与 svdt（Unity 加密容器）都只读，
+    /// 且没有可编辑的字段语义，界面上不应把字节行当成普通字段展示。
+    /// </summary>
+    private static bool IsUnparsedDocument(SaveDocument document) =>
+        document.IsReadOnly && document.FormatId is "raw" or "svdt";
+
+    private void UpdateParseIssuePanel()
+    {
+        bool unparsed = _document is not null && IsUnparsedDocument(_document);
+
+        ParseIssueHost.Visibility = unparsed ? Visibility.Visible : Visibility.Collapsed;
+        SearchPanel.Visibility = unparsed ? Visibility.Collapsed : Visibility.Visible;
+        FieldTree.Visibility = !unparsed || _rawBytesVisible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        if (!unparsed) return;
+
+        BtnToggleRaw.Content = _rawBytesVisible
+            ? "隐藏原始字节"
+            : "显示原始字节（只读）";
+
+        if (_document!.FormatId == "svdt")
+        {
+            TxtParseIssueTitle.Text = "此存档已加密，无法解析";
+            TxtParseIssueBody.Text =
+                "检测到 SVDT 容器（Unity）。负载是高熵二进制，长度按 16 字节对齐，" +
+                "属于 AES 类加密/压缩数据，无法直接读出金币、背包等字段。";
+            TxtParseIssueNeed.Text =
+                "解析需要：该游戏专用的解密密钥与解码逻辑。\n" +
+                "SaveForge 不会尝试解密，也不会写回这个文件。";
+        }
+        else
+        {
+            TxtParseIssueTitle.Text = "无法解析此存档";
+            TxtParseIssueBody.Text = _document.ParseError
+                ?? "文件内容不符合任何已支持的存档格式。";
+            TxtParseIssueNeed.Text =
+                "解析需要：对应引擎/游戏的格式适配器或解密模块。\n" +
+                "可以展开原始字节排查，但这里不能编辑。";
+        }
+    }
+
+    private void BtnToggleRaw_Click(object sender, RoutedEventArgs e)
+    {
+        _rawBytesVisible = !_rawBytesVisible;
+
+        // 收起原始字节时同时清掉字段选中，避免右侧停留在一条字节行上
+        if (!_rawBytesVisible) _selected = null;
+
+        UpdateParseIssuePanel();
+        UpdateRightPanel();
     }
 
     // ====================================================================

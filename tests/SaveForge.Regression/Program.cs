@@ -123,6 +123,7 @@ internal static class Program
                 Utf8(LzString.CompressToBase64(mvJson)), "rpgmaker-mv", "gold"),
             new("RPG Maker MV/MZ（明文）", "plain.rpgsave", Utf8(mvJson), "rpgmaker-mv", "gold"),
             new("Unreal Engine", "sample.sav", BuildGvas(), "ue-sav", null, ByteStable: true),
+            new("SVDT 加密容器（Unity）", "encrypted.sav", BuildSvdt(), "svdt"),
             new("未知二进制", "unknown.bin",
                 new byte[] { 0x00, 0x13, 0x37, 0xFF, 0x42, 0x99, 0x01, 0x7E, 0x55, 0xAA }, "raw"),
         };
@@ -573,6 +574,23 @@ internal static class Program
         party.Ivars.Add(new("@gold", 100L));
 
         return RubyMarshalWriter.Write(party, useEncodingIvars: false);
+    }
+
+    /// <summary>
+    /// SVDT 容器：4 字节魔数 + 1 字节版本 + 高熵负载。
+    /// 只读格式，测试识别、预览与拒绝写回。
+    /// </summary>
+    private static byte[] BuildSvdt()
+    {
+        using var stream = new MemoryStream();
+
+        stream.Write(Encoding.ASCII.GetBytes("SVDT"));
+        stream.WriteByte(1);
+
+        for (int i = 0; i < 64; i++)
+            stream.WriteByte((byte)((i * 73 + 19) & 0xFF));
+
+        return stream.ToArray();
     }
 
     /// <summary>

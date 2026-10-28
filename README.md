@@ -2,7 +2,7 @@
 
 本地存档编辑器。所有处理都在本机完成，文件不上传任何服务器。
 
-支持 12 种存档格式的浏览与修改，覆盖 Unity、Unreal Engine、RPG Maker、Ren'Py 等主流引擎，并能自动识别和解包常见压缩层。
+支持 12 种存档格式的浏览与修改，覆盖 Unity、Unreal Engine、RPG Maker、Ren'Py 等主流引擎，并能自动识别和解包常见压缩层。另有部分 Unity 游戏使用的 SVDT 加密容器，可识别但只读预览。
 
 ## 功能
 
@@ -19,7 +19,8 @@
 - **物品名映射**：自动加载游戏数据表，把库存 ID 显示成真实名称
 - **导出 / 导入 JSON**：任意格式转成 JSON 查看，或导入外部编辑的值
 - **字段搜索**：按名称、别名或值过滤树
-- **回归测试**：12 种格式 + 8 种压缩层都有自动化用例（96 项断言）
+- **加密容器识别**：SVDT（部分 Unity 游戏）只读识别并说明原因，不会再被误报成 Unreal 解析失败
+- **回归测试**：12 种可写格式 + SVDT 容器 + 8 种压缩层都有自动化用例（100 项断言）
 
 ## 支持的格式
 
@@ -32,6 +33,7 @@
 | plist（XML） | plist | ✅ | ✅ |
 | plist（binary） | plist | ✅ | ✅ |
 | Unreal Engine | sav / gvas | ✅ | ✅ |
+| SVDT 加密容器（Unity） | sav | ✅ 只读预览 | ❌ |
 | Ren'Py | save | ✅ | ✅ |
 | RPG Maker XP/VX/VX Ace | rxdata / rvdata / rvdata2 | ✅ | ✅ |
 | RPG Maker MV/MZ | rpgsave / rmmzsave | ✅ | ✅ |
@@ -64,7 +66,7 @@ dotnet run --project src/SaveForge.App
 
 ### 运行回归测试
 
-覆盖全部 12 种格式、8 种压缩层，以及真实 RPG Maker MZ 存档与游戏目录定位：
+覆盖 12 种可写格式、SVDT 加密容器、8 种压缩层，以及真实 RPG Maker MZ 存档与游戏目录定位：
 
 ```bash
 dotnet run --project tests/SaveForge.Regression
@@ -159,6 +161,17 @@ RPG Maker 的库存以 `{物品ID: 数量}` 存储，单看 ID 没有意义。�
 
 说明格式未识别。可能原因：加密存档、自定义二进制序列化，或该引擎的变体未被支持。
 
+部分 Unity 游戏使用 `SVDT` 加密容器（文件头就是 `SVDT`，负载熵接近 8 bit/byte、长度按 16 字节对齐）。
+工具会把它明确识别为「SVDT 加密存档（Unity，只读）」，界面先显示一条说明：
+
+- 为什么会失败（检测到 SVDT 加密容器）
+- 解析需要什么（该游戏专用的解密密钥与解码逻辑）
+- 不会尝试解密，也不会写回文件
+
+原始字节默认隐藏，只有点「显示原始字节（只读）」才会展开排查。
+类似地，存档如果只是扩展名为 `.sav`、内容却不符合 GVAS，不会再被误报成 Unreal 解析失败，
+而是显示为「无法解析」并给出原因。
+
 ## 项目结构
 
 ```
@@ -194,6 +207,7 @@ tests/
 ## 已知限制
 
 - 加密存档（需专用密钥）、Oodle 压缩、RocksDB / LevelDB 不支持
+- SVDT 等 Unity 加密容器只能只读预览；解密需要该游戏自己的密钥
 - Easy Save 3（Unity 商业插件）需要游戏内 AES 密钥，暂未支持
 - UE 存档中的 Vector / Guid / DateTime 等内置结构体为只读
 - 只读格式（未知二进制）无法写回
