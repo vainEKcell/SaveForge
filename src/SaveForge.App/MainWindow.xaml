@@ -27,36 +27,40 @@
                 CornerRadius="10"
                 Padding="12,10"
                 Margin="0,0,0,12">
-            <WrapPanel Orientation="Horizontal">
-                <Button x:Name="BtnOpen" Content="打开存档" Style="{StaticResource BtnPrimary}"
-                        Margin="0,0,8,0" Click="BtnOpen_Click"/>
-                <Button x:Name="BtnSave" Content="保存修改" Style="{StaticResource Btn}"
-                        Margin="0,0,8,0" IsEnabled="False" Click="BtnSave_Click"/>
-                <Button x:Name="BtnBackup" Content="生成备份" Style="{StaticResource Btn}"
-                        Margin="0,0,8,0" IsEnabled="False" Click="BtnBackup_Click"/>
-                <Button x:Name="BtnDiff" Content="对比存档" Style="{StaticResource Btn}"
-                        Margin="0,0,8,0" IsEnabled="False" Click="BtnDiff_Click"/>
-                <Button x:Name="BtnBatch" Content="批量修改" Style="{StaticResource Btn}"
-                        Margin="0,0,16,0" IsEnabled="False" Click="BtnBatch_Click"/>
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="BtnGameRoot" Content="游戏目录" Style="{StaticResource Btn}"
+                            Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
+                            ToolTip="选择游戏所在的文件夹，自动读取 Items / Weapons / Armors 数据表，把物品 ID 显示成名称"
+                            Click="BtnGameRoot_Click"/>
+                    <Button x:Name="BtnLoadDatabase" Content="数据表" Style="{StaticResource Btn}"
+                            Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
+                            ToolTip="只载入单个数据表文件（Items.json / Weapons.json / Armors.json）"
+                            Click="BtnLoadDatabase_Click"/>
+                    <Button x:Name="BtnAbout" Content="关于" Style="{StaticResource Btn}"
+                            Padding="10,5" Click="BtnAbout_Click"/>
+                </StackPanel>
 
-                <Button x:Name="BtnExportJson" Content="导出 JSON" Style="{StaticResource Btn}"
-                        Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
-                        Click="BtnExportJson_Click"/>
-                <Button x:Name="BtnImportJson" Content="导入 JSON" Style="{StaticResource Btn}"
-                        Padding="10,5" Margin="0,0,16,0" IsEnabled="False"
-                        Click="BtnImportJson_Click"/>
+                <WrapPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <Button x:Name="BtnOpen" Content="打开存档" Style="{StaticResource BtnPrimary}"
+                            Margin="0,0,8,4" Click="BtnOpen_Click"/>
+                    <Button x:Name="BtnSave" Content="保存修改" Style="{StaticResource Btn}"
+                            Margin="0,0,8,4" IsEnabled="False" Click="BtnSave_Click"/>
+                    <Button x:Name="BtnBackup" Content="生成备份" Style="{StaticResource Btn}"
+                            Margin="0,0,8,4" IsEnabled="False" Click="BtnBackup_Click"/>
+                    <Button x:Name="BtnDiff" Content="对比存档" Style="{StaticResource Btn}"
+                            Margin="0,0,8,4" IsEnabled="False" Click="BtnDiff_Click"/>
+                    <Button x:Name="BtnBatch" Content="批量修改" Style="{StaticResource Btn}"
+                            Margin="0,0,16,4" IsEnabled="False" Click="BtnBatch_Click"/>
 
-                <Button x:Name="BtnGameRoot" Content="游戏目录" Style="{StaticResource Btn}"
-                        Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
-                        ToolTip="选择游戏所在的文件夹，自动读取 Items / Weapons / Armors 数据表，把物品 ID 显示成名称"
-                        Click="BtnGameRoot_Click"/>
-                <Button x:Name="BtnLoadDatabase" Content="数据表" Style="{StaticResource Btn}"
-                        Padding="10,5" Margin="0,0,6,0" IsEnabled="False"
-                        ToolTip="只载入单个数据表文件（Items.json / Weapons.json / Armors.json）"
-                        Click="BtnLoadDatabase_Click"/>
-                <Button x:Name="BtnAbout" Content="关于" Style="{StaticResource Btn}"
-                        Padding="10,5" Click="BtnAbout_Click"/>
-            </WrapPanel>
+                    <Button x:Name="BtnExportJson" Content="导出 JSON" Style="{StaticResource Btn}"
+                            Padding="10,5" Margin="0,0,6,4" IsEnabled="False"
+                            Click="BtnExportJson_Click"/>
+                    <Button x:Name="BtnImportJson" Content="导入 JSON" Style="{StaticResource Btn}"
+                            Padding="10,5" Margin="0,0,6,4" IsEnabled="False"
+                            Click="BtnImportJson_Click"/>
+                </WrapPanel>
+            </DockPanel>
         </Border>
 
         <!-- ==================== 主区域 ==================== -->
@@ -275,7 +279,14 @@
                                                         IsReadOnly="True" Width="52"/>
                                     <DataGridTextColumn Header="数量"
                                                         Binding="{Binding QuantityText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                                        Width="76"/>
+                                                        Width="76">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextAlignment" Value="Right"/>
+                                                <Setter Property="Margin" Value="0,0,8,0"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
 
